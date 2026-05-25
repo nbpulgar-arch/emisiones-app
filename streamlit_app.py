@@ -45,7 +45,7 @@ with st.spinner("Descargando datos..."):
 if not df_emisiones.empty:
     st.success(f"Se cargaron {len(df_emisiones)} registros.")
     
-    # --- 1. TRADUCCIÓN Y LIMPIEZA DE COLUMNAS ---
+    # --- 1. TRADUCCIÓN Y LIMPIEZA DE COLUMNAS (CORREGIDO) ---
     columnas_limpias = {
         "ano": "Año",
         "id_comuna": "ID Comuna",
@@ -56,7 +56,7 @@ if not df_emisiones.empty:
         "glosa_region": "Región",
         "categoria_vehiculo": "Categoría Vehículo",
         "tipo_vehiculo": "Tipo Vehículo",
-        "tipo_combustible": "Tipo Combustible",
+        "tipo_emision": "Tipo Combustible",  # <- Aquí estaba el detalle: la API lo llama tipo_emision
         "tecnologia": "Tecnología",
         "emision_co2_t": "Emisiones CO2 (Toneladas)",
         "emision_ch4_t": "Emisiones CH4 (Toneladas)",
@@ -64,36 +64,31 @@ if not df_emisiones.empty:
     }
     df_emisiones = df_emisiones.rename(columns=columnas_limpias)
     
-    # --- 2. NUEVO: BARRA LATERAL CON FILTROS DINÁMICOS ---
+    # --- 2. BARRA LATERAL CON FILTROS DINÁMICOS ---
     st.sidebar.header("🎯 Filtros de Búsqueda")
     
-    # Filtro de Tipo de Vehículo
-    lista_vehiculos = ["Todos"] + sorted(list(df_emisiones["Tipo Vehículo"].dropna().unique()))
-    vehiculo_sel = st.sidebar.selectbox("Selecciona Tipo de Vehículo:", lista_vehiculos)
+    # Filtro de Tipo de Vehículo (Si la columna existe en los datos)
+    if "Tipo Vehículo" in df_emisiones.columns:
+        lista_vehiculos = ["Todos"] + sorted(list(df_emisiones["Tipo Vehículo"].dropna().unique()))
+        vehiculo_sel = st.sidebar.selectbox("Selecciona Tipo de Vehículo:", lista_vehiculos)
+        if vehiculo_sel != "Todos":
+            df_emisiones = df_emisiones[df_emisiones["Tipo Vehículo"] == vehiculo_sel]
     
-    # Filtro de Tipo de Combustible
-    lista_combustibles = ["Todos"] + sorted(list(df_emisiones["Tipo Combustible"].dropna().unique()))
-    combustible_sel = st.sidebar.selectbox("Selecciona Tipo de Combustible:", lista_combustibles)
-    
-    # Aplicar los filtros al DataFrame original
-    if vehiculo_sel != "Todos":
-        df_emisiones = df_emisiones[df_emisiones["Tipo Vehículo"] == vehiculo_sel]
-        
-    if combustible_sel != "Todos":
-        df_emisiones = df_emisiones[df_emisiones["Tipo Combustible"] == combustible_sel]
+    # Filtro de Tipo de Combustible (Ahora buscará "Tipo Combustible" con éxito)
+    if "Tipo Combustible" in df_emisiones.columns:
+        lista_combustibles = ["Todos"] + sorted(list(df_emisiones["Tipo Combustible"].dropna().unique()))
+        combustible_sel = st.sidebar.selectbox("Selecciona Tipo de Combustible:", lista_combustibles)
+        if combustible_sel != "Todos":
+            df_emisiones = df_emisiones[df_emisiones["Tipo Combustible"] == combustible_sel]
     # ----------------------------------------------------
 
-    # --- 3. NUEVO: TARJETAS DE MÉTRICAS CLAVE (KPIs) ---
+    # --- 3. TARJETAS DE MÉTRICAS CLAVE (KPIs) ---
     st.markdown("### 📈 Indicadores Clave (Filtrados)")
     
-    # Calculamos totales dinámicos basados en los filtros activos
     total_registros_filtrados = len(df_emisiones)
-    
-    # Validamos si existen las columnas de emisiones para sumar
     co2_total = df_emisiones["Emisiones CO2 (Toneladas)"].sum() if "Emisiones CO2 (Toneladas)" in df_emisiones.columns else 0
     ch4_total = df_emisiones["Emisiones CH4 (Toneladas)"].sum() if "Emisiones CH4 (Toneladas)" in df_emisiones.columns else 0
     
-    # Creamos tres columnas visuales en la pantalla para las tarjetas
     col1, col2, col3 = st.columns(3)
     with col1:
         st.metric(label="Muestra Activa", value=f"{total_registros_filtrados} filas")
