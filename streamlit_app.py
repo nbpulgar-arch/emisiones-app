@@ -84,12 +84,17 @@ if not df_emisiones.empty:
         if combustible_sel != "Todos":
             df_emisiones = df_emisiones[df_emisiones["Tipo Combustible"] == combustible_sel]
 
-    # --- TARJETAS DE MÉTRICAS CLAVE (KPIs) ---
+    ## --- TARJETAS DE MÉTRICAS CLAVE (KPIs) ---
     st.markdown("### 📈 Indicadores Clave (Filtrados)")
     total_registros_filtrados = len(df_emisiones)
     col_toneladas = "cantidad_toneladas" if "cantidad_toneladas" in df_emisiones.columns else "Cantidad Toneladas"
     
     if col_toneladas in df_emisiones.columns:
+        # CONVERSIÓN DE SEGURIDAD (Agregada aquí mismo)
+        df_emisiones[col_toneladas] = df_emisiones[col_toneladas].astype(str).str.replace(',', '.')
+        df_emisiones[col_toneladas] = pd.to_numeric(df_emisiones[col_toneladas], errors='coerce')
+        
+        # Cálculos matemáticos limpios
         toneladas_totales = df_emisiones[col_toneladas].sum()
         promedio_por_ruta = df_emisiones[col_toneladas].mean() if total_registros_filtrados > 0 else 0
     else:
