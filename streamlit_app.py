@@ -40,14 +40,29 @@ with st.spinner("Descargando datos..."):
     df_base = cargar_datos(limite)
 
 if not df_base.empty:
-    # Hacemos una copia limpia para trabajar fuera de la caché
     df_emisiones = df_base.copy()
     
-    # --- 1. TRADUCCIÓN DE COLUMNAS (Hecho afuera para evitar conflictos con la caché) ---
+    # --- DICCIONARIO MAESTRO DE COMUNAS (CHILE) ---
+    # Mapeamos los códigos numéricos del INE a sus nombres reales
+    diccionario_comunas = {
+        "5301": "Valparaíso", "5701": "Rancagua", "6301": "Talca",
+        "8101": "Concepción", "8102": "Coronel", "8103": "Chiguayante",
+        "8107": "Penco", "8108": "San Pedro de la Paz", "8110": "Talcahuano",
+        "8111": "Tomé", "8112": "Hualpén", "8201": "Chillán",
+        "13101": "Santiago", "13114": "Las Condes", "13123": "Providencia",
+        "2101": "Antofagasta", "15101": "Arica", "16101": "Chillán Viejo",
+        "2201": "Calama", "9201": "Angol", "11101": "Coyhaique"
+    }
+    
+    # Si la API nos falló con glosa_comuna, creamos la columna "Comuna" traduciendo el id_comuna
+    if "id_comuna" in df_emisiones.columns:
+        df_emisiones["id_comuna"] = df_emisiones["id_comuna"].astype(str)
+        df_emisiones["Comuna"] = df_emisiones["id_comuna"].map(diccionario_comunas).fillna(df_emisiones["id_comuna"])
+    
+    # --- TRADUCCIÓN DEL RESTO DE COLUMNAS ---
     columnas_limpias = {
         "ano": "Año",
         "id_comuna": "ID Comuna",
-        "glosa_comuna": "Comuna",
         "id_provincia": "ID Provincia",
         "glosa_provincia": "Provincia",
         "id_region": "ID Región",
@@ -70,7 +85,7 @@ if not df_base.empty:
 
     st.success(f"Se cargaron {len(df_emisiones)} registros.")
     
-    # --- 2. BARRA LATERAL CON FILTROS DINÁMICOS ---
+    # --- BARRA LATERAL CON FILTROS DINÁMICOS ---
     st.sidebar.header("🎯 Filtros de Búsqueda")
     
     if "Tipo Vehículo" in df_emisiones.columns:
@@ -85,7 +100,7 @@ if not df_base.empty:
         if combustible_sel != "Todos":
             df_emisiones = df_emisiones[df_emisiones["Tipo Combustible"] == combustible_sel]
 
-    # --- 3. TARJETAS DE MÉTRICAS CLAVE (KPIs) ---
+    # --- TARJETAS DE MÉTRICAS CLAVE (KPIs) ---
     st.markdown("### 📈 Indicadores Clave (Filtrados)")
     total_registros_filtrados = len(df_emisiones)
     
@@ -123,44 +138,19 @@ if not df_base.empty:
     })
     st.dataframe(resumen, use_container_width=True)
     
-    # --- 4. GRÁFICO DE BARRAS (INTELIGENTE CON SISTEMA DE RESPALDO) ---
+    # --- 4. GRÁFICO DE BARRAS INTERACTIVO ---
     st.subheader("📊 Análisis de Categorías")
     st.write("Seleccione la categoría a graficar:")
     
-    # Creamos una lista dinámica basada en lo que REALMENTE llegó de la API
-    opciones_disponibles = []
+    opciones_grafico = ["Comuna", "Provincia", "Región", "Categoría Vehículo", "Tipo Vehículo", "Tipo Combustible", "Tecnología"]
+    opciones_validas = [col for col in opciones_grafico if col in df_emisiones.columns]
     
-    # Control de Comunas: Si existe la columna con texto usala, sino, respalda con el ID numérico
-    if "Comuna" in df_emisiones.columns:
-        opciones_disponibles.append("Comuna")
-    elif "ID Comuna" in df_emisiones.columns:
-        opciones_disponibles.append("ID Comuna")
+    if opciones_validas:
+        col_seleccionada = st.selectbox("Seleccione la categoría:", opciones_validas)
         
-    # Control de Provincias
-    if "Provincia" in df_emisiones.columns:
-        opciones_disponibles.append("Provincia")
-    elif "ID Provincia" in df_emisiones.columns:
-        opciones_disponibles.append("ID Provincia")
-        
-    # Agregamos las demás categorías tradicionales si existen
-    for cat in ["Región", "Categoría Vehículo", "Tipo Vehículo", "Tipo Combustible", "Tecnología"]:
-        if cat in df_emisiones.columns:
-            opciones_disponibles.append(cat)
-            
-    # Si por algún motivo la API vino muy vacía, dejamos las columnas técnicas originales como última opción
-    if not opciones_disponibles:
-        opciones_disponibles = df_emisiones.columns.tolist()
-
-    # Desplegamos el selector con las opciones reales que sí tienen datos activos
-    col_seleccionada = st.selectbox("Seleccione la categoría:", opciones_disponibles)
-    
-    if col_seleccionada in df_emisiones.columns:
         fig, ax = plt.subplots(figsize=(10, 5))
-        
-        # Procesamos los datos como texto para contar frecuencias
         conteo = df_emisiones[col_seleccionada].astype(str).value_counts().head(10)
         
-        # Dibujamos el gráfico con estilo verde limpio
         conteo.plot(kind='bar', color="#2ca02c", edgecolor="black", ax=ax)
         
         ax.set_title(f"Top 10: {col_seleccionada}", fontsize=14, fontweight='bold')
@@ -171,6 +161,6 @@ if not df_base.empty:
         
         st.pyplot(fig)
     else:
-        st.warning(f"La categoría '{col_seleccionada}' no contiene datos válidos en este momento.")
+        st.warning("No se encontraron categorías válidas para graficar.")
 else:
     st.error("No se pudo cargar la base de datos.")
