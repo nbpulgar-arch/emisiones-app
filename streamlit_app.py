@@ -45,9 +45,45 @@ with st.spinner("Descargando datos..."):
 if not df_emisiones.empty:
     st.success(f"Se cargaron {len(df_emisiones)} registros.")
     
+    # --- NUEVO: TRADUCCIÓN Y LIMPIEZA DE COLUMNAS ---
+    # Creamos un diccionario con el nombre técnico original y el nombre limpio que queremos mostrar
+    columnas_limpias = {
+        "ano": "Año",
+        "id_comuna": "ID Comuna",
+        "glosa_comuna": "Comuna",
+        "id_provincia": "ID Provincia",
+        "glosa_provincia": "Provincia",
+        "id_region": "ID Región",
+        "glosa_region": "Región",
+        "categoria_vehiculo": "Categoría Vehículo",
+        "tipo_vehiculo": "Tipo Vehículo",
+        "tipo_combustible": "Tipo Combustible",
+        "tecnologia": "Tecnología",
+        "emision_co2_t": "Emisiones CO2 (Toneladas)",
+        "emision_ch4_t": "Emisiones CH4 (Toneladas)",
+        "emision_n2o_t": "Emisiones N2O (Toneladas)"
+    }
+    
+    # Aplicamos el renombrado al DataFrame
+    df_emisiones = df_emisiones.rename(columns=columnas_limpias)
+    # ------------------------------------------------
+    
     # Mostrar la tabla de datos
     with st.expander("Ver tabla de datos"):
         st.dataframe(df_emisiones, use_container_width=True)
+    
+    # --- SECCIÓN DE ANÁLISIS ESTADÍSTICO ---
+    st.subheader("📊 Resumen Estadístico")
+    st.write("Cálculo automático de promedios, máximos y mínimos:")
+    
+    resumen = df_emisiones.describe()
+    resumen = resumen.rename(index={
+        "count": "Total registros",
+        "unique": "Valores únicos",
+        "top": "Valor más común",
+        "freq": "Frecuencia"
+    })
+    st.dataframe(resumen, use_container_width=True)
     
     # --- NUEVA SECCIÓN DE ANÁLISIS ESTADÍSTICO ---
     st.subheader("📊 Resumen Estadístico")
