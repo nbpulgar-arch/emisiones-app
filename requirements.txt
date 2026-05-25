@@ -1,4 +1,5 @@
-streamlitstreamlit
+Plaintext
+streamlit
 pandas
 requests
 matplotlib
