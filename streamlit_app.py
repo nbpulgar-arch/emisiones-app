@@ -140,17 +140,23 @@ if not df_emisiones.empty:
     # 4. GRÁFICO DE BARRAS
 
     st.subheader("Análisis de Categorías")
+    # ----------------------------------------------------
     
-
+    # 4. GRÁFICO DE BARRAS (OPTIMIZADO CON NOMBRES LIMPIOS)
+    st.subheader("📊 Análisis de Categorías")
+    st.write("Seleccione la categoría a graficar:")
     
-    # Filtramos solo las columnas que son texto (categorías)
-    columnas_cat = df_emisiones.select_dtypes(include=["object"]).columns.tolist()
+    # Definimos solo las columnas de texto limpias que queremos permitir graficar
+    opciones_grafico = ["Comuna", "Provincia", "Región", "Categoría Vehículo", "Tipo Vehículo", "Tipo Combustible", "Tecnología"]
     
-    if columnas_cat:
-        # Selector para elegir qué graficar
-        col_seleccionada = st.selectbox("Seleccione la categoría a graficar:", columnas_cat)
+    # Filtramos la lista para mostrar solo las que realmente existan en el DataFrame
+    opciones_validas = [col for col in opciones_grafico if col in df_emisiones.columns]
+    
+    if opciones_validas:
+        # Creamos el selector con las opciones amigables
+        col_seleccionada = st.selectbox("Seleccione la categoría:", opciones_validas)
         
-        # Crear el gráfico
+        # Generamos el gráfico de barras basado en la columna seleccionada
         fig, ax = plt.subplots(figsize=(10, 5))
         
         # Contar los 10 valores más comunes de la columna elegida
@@ -161,12 +167,13 @@ if not df_emisiones.empty:
         
         ax.set_title(f"Top 10: {col_seleccionada}", fontsize=14, fontweight='bold')
         ax.set_ylabel("Cantidad de Registros", fontsize=12)
+        ax.set_xlabel(col_seleccionada, fontsize=12)
         plt.xticks(rotation=45, ha='right')
         ax.grid(axis='y', linestyle='--', alpha=0.7)
         
         # Mostrar el gráfico en la web
         st.pyplot(fig)
     else:
-        st.warning("No se encontraron columnas de texto para graficar.")
+        st.warning("No se encontraron columnas de texto válidas para generar el gráfico.")
 else:
     st.error("No se pudo cargar la base de datos.")
