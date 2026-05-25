@@ -82,24 +82,32 @@ if not df_emisiones.empty:
             df_emisiones = df_emisiones[df_emisiones["Tipo Combustible"] == combustible_sel]
     # ----------------------------------------------------
 
-    # --- 3. TARJETAS DE MÉTRICAS CLAVE (KPIs) (CORREGIDO) ---
+    ## --- 3. TARJETAS DE MÉTRICAS CLAVE (KPIs) (REPARADO Y CONVERTIDO) ---
     st.markdown("### 📈 Indicadores Clave (Filtrados)")
     
-    # 1. Total de registros que cumplen los filtros
     total_registros_filtrados = len(df_emisiones)
     
-    # 2. Sumamos la columna real que viene de la API
-    # Evaluamos si se llama "cantidad_toneladas" o "Cantidad Toneladas" por si ya se renombró
+    # Identificamos el nombre de la columna
     col_toneladas = "cantidad_toneladas" if "cantidad_toneladas" in df_emisiones.columns else "Cantidad Toneladas"
     
     if col_toneladas in df_emisiones.columns:
-        toneladas_totales = df_emisiones[col_toneladas].sum()
-        promedio_por_ruta = df_emisiones[col_toneladas].mean() if total_registros_filtrados > 0 else 0
+        try:
+            # CORRECCIÓN DE TIPO: Convertimos las comas a puntos y pasamos a número float
+            if df_emisiones[col_toneladas].dtype == 'object':
+                df_emisiones[col_toneladas] = df_emisiones[col_toneladas].astype(str).str.replace(',', '.')
+                df_emisiones[col_toneladas] = pd.to_numeric(df_emisiones[col_toneladas], errors='coerce')
+            
+            # Operaciones matemáticas seguras
+            toneladas_totales = df_emisiones[col_toneladas].sum()
+            promedio_por_ruta = df_emisiones[col_toneladas].mean() if total_registros_filtrados > 0 else 0
+        except Exception:
+            toneladas_totales = 0
+            promedio_por_ruta = 0
     else:
         toneladas_totales = 0
         promedio_por_ruta = 0
     
-    # 3. Desplegamos las tarjetas con los datos reales de la API
+    # Desplegamos las tarjetas actualizadas
     col1, col2, col3 = st.columns(3)
     with col1:
         st.metric(label="Muestra Activa", value=f"{total_registros_filtrados} filas")
@@ -109,7 +117,7 @@ if not df_emisiones.empty:
         st.metric(label="Promedio por Registro (t)", value=f"{promedio_por_ruta:,.4f}")
     
     st.markdown("---")
-    # ----------------------------------------------------git add streamlit_app.py
+    # ----------------------------------------------------
     
     # Mostrar la tabla de datos
     with st.expander("🔍 Ver tabla de datos detallada"):
