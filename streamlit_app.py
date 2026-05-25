@@ -42,16 +42,17 @@ with st.spinner("Descargando datos..."):
 if not df_base.empty:
     df_emisiones = df_base.copy()
     
-    # --- DICCIONARIO MAESTRO DE COMUNAS (CHILE) ---
+   # --- DICCIONARIO MAESTRO DE COMUNAS (CHILE) ---
     # Mapeamos los códigos numéricos del INE a sus nombres reales
     diccionario_comunas = {
-        "5301": "Valparaíso", "5701": "Rancagua", "6301": "Talca",
-        "8101": "Concepción", "8102": "Coronel", "8103": "Chiguayante",
-        "8107": "Penco", "8108": "San Pedro de la Paz", "8110": "Talcahuano",
-        "8111": "Tomé", "8112": "Hualpén", "8201": "Chillán",
-        "13101": "Santiago", "13114": "Las Condes", "13123": "Providencia",
-        "2101": "Antofagasta", "15101": "Arica", "16101": "Chillán Viejo",
-        "2201": "Calama", "9201": "Angol", "11101": "Coyhaique"
+        "3101": "Valparaíso", "5301": "Valparaíso", "5701": "Rancagua", 
+        "6301": "Talca", "8101": "Concepción", "8102": "Coronel", 
+        "8103": "Chiguayante", "8107": "Penco", "8108": "San Pedro de la Paz", 
+        "8110": "Talcahuano", "8111": "Tomé", "8112": "Hualpén", 
+        "8201": "Chillán", "13101": "Santiago", "13114": "Las Condes", 
+        "13123": "Providencia", "2101": "Antofagasta", "15101": "Arica", 
+        "16101": "Chillán Viejo", "2201": "Calama", "9201": "Angol", 
+        "11101": "Coyhaique"
     }
     
     # Si la API nos falló con glosa_comuna, creamos la columna "Comuna" traduciendo el id_comuna
