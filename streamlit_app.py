@@ -45,8 +45,7 @@ with st.spinner("Descargando datos..."):
 if not df_emisiones.empty:
     st.success(f"Se cargaron {len(df_emisiones)} registros.")
     
-    # --- NUEVO: TRADUCCIÓN Y LIMPIEZA DE COLUMNAS ---
-    # Creamos un diccionario con el nombre técnico original y el nombre limpio que queremos mostrar
+    # --- 1. TRADUCCIÓN Y LIMPIEZA DE COLUMNAS ---
     columnas_limpias = {
         "ano": "Año",
         "id_comuna": "ID Comuna",
@@ -63,13 +62,51 @@ if not df_emisiones.empty:
         "emision_ch4_t": "Emisiones CH4 (Toneladas)",
         "emision_n2o_t": "Emisiones N2O (Toneladas)"
     }
-    
-    # Aplicamos el renombrado al DataFrame
     df_emisiones = df_emisiones.rename(columns=columnas_limpias)
-    # ------------------------------------------------
+    
+    # --- 2. NUEVO: BARRA LATERAL CON FILTROS DINÁMICOS ---
+    st.sidebar.header("🎯 Filtros de Búsqueda")
+    
+    # Filtro de Tipo de Vehículo
+    lista_vehiculos = ["Todos"] + sorted(list(df_emisiones["Tipo Vehículo"].dropna().unique()))
+    vehiculo_sel = st.sidebar.selectbox("Selecciona Tipo de Vehículo:", lista_vehiculos)
+    
+    # Filtro de Tipo de Combustible
+    lista_combustibles = ["Todos"] + sorted(list(df_emisiones["Tipo Combustible"].dropna().unique()))
+    combustible_sel = st.sidebar.selectbox("Selecciona Tipo de Combustible:", lista_combustibles)
+    
+    # Aplicar los filtros al DataFrame original
+    if vehiculo_sel != "Todos":
+        df_emisiones = df_emisiones[df_emisiones["Tipo Vehículo"] == vehiculo_sel]
+        
+    if combustible_sel != "Todos":
+        df_emisiones = df_emisiones[df_emisiones["Tipo Combustible"] == combustible_sel]
+    # ----------------------------------------------------
+
+    # --- 3. NUEVO: TARJETAS DE MÉTRICAS CLAVE (KPIs) ---
+    st.markdown("### 📈 Indicadores Clave (Filtrados)")
+    
+    # Calculamos totales dinámicos basados en los filtros activos
+    total_registros_filtrados = len(df_emisiones)
+    
+    # Validamos si existen las columnas de emisiones para sumar
+    co2_total = df_emisiones["Emisiones CO2 (Toneladas)"].sum() if "Emisiones CO2 (Toneladas)" in df_emisiones.columns else 0
+    ch4_total = df_emisiones["Emisiones CH4 (Toneladas)"].sum() if "Emisiones CH4 (Toneladas)" in df_emisiones.columns else 0
+    
+    # Creamos tres columnas visuales en la pantalla para las tarjetas
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric(label="Muestra Activa", value=f"{total_registros_filtrados} filas")
+    with col2:
+        st.metric(label="Total CO2 (t)", value=f"{co2_total:,.2f}")
+    with col3:
+        st.metric(label="Total CH4 (t)", value=f"{ch4_total:,.4f}")
+    
+    st.markdown("---")
+    # ----------------------------------------------------
     
     # Mostrar la tabla de datos
-    with st.expander("Ver tabla de datos"):
+    with st.expander("🔍 Ver tabla de datos detallada"):
         st.dataframe(df_emisiones, use_container_width=True)
     
     # --- SECCIÓN DE ANÁLISIS ESTADÍSTICO ---
@@ -84,25 +121,7 @@ if not df_emisiones.empty:
         "freq": "Frecuencia"
     })
     st.dataframe(resumen, use_container_width=True)
-    
-    # --- NUEVA SECCIÓN DE ANÁLISIS ESTADÍSTICO ---
-    st.subheader("📊 Resumen Estadístico")
-    st.write("Cálculo automático de promedios, máximos y mínimos de las columnas numéricas:")
-    
-    # 1. Generamos el resumen estadístico
-    resumen = df_emisiones.describe()
-    
-    # 2. Renombramos las filas del inglés al español
-    resumen = resumen.rename(index={
-        "count": "Total registros",
-        "unique": "Valores únicos",
-        "top": "Valor más común",
-        "freq": "Frecuencia"
-    })
-    
-    # 3. Mostramos la tabla ya corregida
-    st.dataframe(resumen, use_container_width=True)
-    # ---------------------------------------------
+    # ----------------------------------------------------
     
     # 4. GRÁFICO DE BARRAS
 
