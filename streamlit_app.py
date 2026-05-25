@@ -82,23 +82,34 @@ if not df_emisiones.empty:
             df_emisiones = df_emisiones[df_emisiones["Tipo Combustible"] == combustible_sel]
     # ----------------------------------------------------
 
-    # --- 3. TARJETAS DE MÉTRICAS CLAVE (KPIs) ---
+    # --- 3. TARJETAS DE MÉTRICAS CLAVE (KPIs) (CORREGIDO) ---
     st.markdown("### 📈 Indicadores Clave (Filtrados)")
     
+    # 1. Total de registros que cumplen los filtros
     total_registros_filtrados = len(df_emisiones)
-    co2_total = df_emisiones["Emisiones CO2 (Toneladas)"].sum() if "Emisiones CO2 (Toneladas)" in df_emisiones.columns else 0
-    ch4_total = df_emisiones["Emisiones CH4 (Toneladas)"].sum() if "Emisiones CH4 (Toneladas)" in df_emisiones.columns else 0
     
+    # 2. Sumamos la columna real que viene de la API
+    # Evaluamos si se llama "cantidad_toneladas" o "Cantidad Toneladas" por si ya se renombró
+    col_toneladas = "cantidad_toneladas" if "cantidad_toneladas" in df_emisiones.columns else "Cantidad Toneladas"
+    
+    if col_toneladas in df_emisiones.columns:
+        toneladas_totales = df_emisiones[col_toneladas].sum()
+        promedio_por_ruta = df_emisiones[col_toneladas].mean() if total_registros_filtrados > 0 else 0
+    else:
+        toneladas_totales = 0
+        promedio_por_ruta = 0
+    
+    # 3. Desplegamos las tarjetas con los datos reales de la API
     col1, col2, col3 = st.columns(3)
     with col1:
         st.metric(label="Muestra Activa", value=f"{total_registros_filtrados} filas")
     with col2:
-        st.metric(label="Total CO2 (t)", value=f"{co2_total:,.2f}")
+        st.metric(label="Total Contaminantes (t)", value=f"{toneladas_totales:,.2f}")
     with col3:
-        st.metric(label="Total CH4 (t)", value=f"{ch4_total:,.4f}")
+        st.metric(label="Promedio por Registro (t)", value=f"{promedio_por_ruta:,.4f}")
     
     st.markdown("---")
-    # ----------------------------------------------------
+    # ----------------------------------------------------git add streamlit_app.py
     
     # Mostrar la tabla de datos
     with st.expander("🔍 Ver tabla de datos detallada"):
