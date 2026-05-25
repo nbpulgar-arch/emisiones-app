@@ -52,7 +52,20 @@ if not df_emisiones.empty:
     # --- NUEVA SECCIÓN DE ANÁLISIS ESTADÍSTICO ---
     st.subheader("📊 Resumen Estadístico")
     st.write("Cálculo automático de promedios, máximos y mínimos de las columnas numéricas:")
-    st.dataframe(df_emisiones.describe())
+    
+    # 1. Generamos el resumen estadístico
+    resumen = df_emisiones.describe()
+    
+    # 2. Renombramos las filas del inglés al español
+    resumen = resumen.rename(index={
+        "count": "Total registros",
+        "unique": "Valores únicos",
+        "top": "Valor más común",
+        "freq": "Frecuencia"
+    })
+    
+    # 3. Mostramos la tabla ya corregida
+    st.dataframe(resumen, use_container_width=True)
     # ---------------------------------------------
     
     # 4. GRÁFICO DE BARRAS
