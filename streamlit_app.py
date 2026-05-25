@@ -123,22 +123,44 @@ if not df_base.empty:
     })
     st.dataframe(resumen, use_container_width=True)
     
-    # --- 4. GRÁFICO DE BARRAS ---
+    # --- 4. GRÁFICO DE BARRAS (INTELIGENTE CON SISTEMA DE RESPALDO) ---
     st.subheader("📊 Análisis de Categorías")
     st.write("Seleccione la categoría a graficar:")
     
-    # Forzamos las opciones directamente al selector de Streamlit sin validación previa para romper el bloqueo
-    col_seleccionada = st.selectbox(
-        "Seleccione la categoría:", 
-        ["Comuna", "Provincia", "Región", "Categoría Vehículo", "Tipo Vehículo", "Tipo Combustible", "Tecnología"]
-    )
+    # Creamos una lista dinámica basada en lo que REALMENTE llegó de la API
+    opciones_disponibles = []
+    
+    # Control de Comunas: Si existe la columna con texto usala, sino, respalda con el ID numérico
+    if "Comuna" in df_emisiones.columns:
+        opciones_disponibles.append("Comuna")
+    elif "ID Comuna" in df_emisiones.columns:
+        opciones_disponibles.append("ID Comuna")
+        
+    # Control de Provincias
+    if "Provincia" in df_emisiones.columns:
+        opciones_disponibles.append("Provincia")
+    elif "ID Provincia" in df_emisiones.columns:
+        opciones_disponibles.append("ID Provincia")
+        
+    # Agregamos las demás categorías tradicionales si existen
+    for cat in ["Región", "Categoría Vehículo", "Tipo Vehículo", "Tipo Combustible", "Tecnología"]:
+        if cat in df_emisiones.columns:
+            opciones_disponibles.append(cat)
+            
+    # Si por algún motivo la API vino muy vacía, dejamos las columnas técnicas originales como última opción
+    if not opciones_disponibles:
+        opciones_disponibles = df_emisiones.columns.tolist()
+
+    # Desplegamos el selector con las opciones reales que sí tienen datos activos
+    col_seleccionada = st.selectbox("Seleccione la categoría:", opciones_disponibles)
     
     if col_seleccionada in df_emisiones.columns:
         fig, ax = plt.subplots(figsize=(10, 5))
         
-        # Nos aseguramos de tratar los datos como texto antes de contar
+        # Procesamos los datos como texto para contar frecuencias
         conteo = df_emisiones[col_seleccionada].astype(str).value_counts().head(10)
         
+        # Dibujamos el gráfico con estilo verde limpio
         conteo.plot(kind='bar', color="#2ca02c", edgecolor="black", ax=ax)
         
         ax.set_title(f"Top 10: {col_seleccionada}", fontsize=14, fontweight='bold')
@@ -149,6 +171,6 @@ if not df_base.empty:
         
         st.pyplot(fig)
     else:
-        st.warning(f"La columna '{col_seleccionada}' no está disponible en los datos actuales.")
+        st.warning(f"La categoría '{col_seleccionada}' no contiene datos válidos en este momento.")
 else:
     st.error("No se pudo cargar la base de datos.")
